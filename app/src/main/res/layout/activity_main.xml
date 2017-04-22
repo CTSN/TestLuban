@@ -34,9 +34,21 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="压缩后尺寸单位："/>
-    <ImageView
-        android:id="@+id/iv_show"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+        <uk.co.senab.photoview.PhotoView
+            android:id="@+id/iv_show_real"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:layout_height="0dp" />
+        <uk.co.senab.photoview.PhotoView
+            android:id="@+id/iv_show_compress"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:layout_height="0dp" />
+    </LinearLayout>
+
 
 </LinearLayout>

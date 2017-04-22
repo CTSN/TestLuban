@@ -32,6 +32,7 @@ import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 import top.zibin.luban.Luban;
 import top.zibin.luban.OnCompressListener;
+import uk.co.senab.photoview.PhotoView;
 
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
 
@@ -47,8 +48,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     TextView tvYuan;
     @BindView(R.id.tv_change)
     TextView tvChange;
-    @BindView(R.id.iv_show)
-    ImageView ivShow;
+    @BindView(R.id.iv_show_real)
+    PhotoView ivShow;
+    @BindView(R.id.iv_show_compress)
+    PhotoView ivShowCompress;
 
     private File photoFile;
 
@@ -98,6 +101,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         if (resultCode == RESULT_OK) {
             switch (requestCode) {
                 case TAKE_PHOTO:
+                    Glide.with(MainActivity.this).load(photoFile).centerCrop().crossFade().into(ivShow);
                     tvYuan.setText("原图：图片大小" + photoFile.length() / 1024 + "k" + "图片尺寸："
                             + Luban.get(getApplicationContext()).getImageSize(photoFile.getPath())[0]
                             + " * " + Luban.get(getApplicationContext()).getImageSize(photoFile.getPath())[1]);
@@ -106,14 +110,19 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 case PHOTO:
                     if (data != null) {// 为了取消选取不报空指针用的
                         Uri uri = data.getData();
-                        File file = new File(uri.getPath());
+                        String urlPath = uri.getPath();
+                        if (urlPath.contains("/raw/")) {
+                            urlPath = urlPath.replace("/raw/", "");
+                        }
+                        File file = new File(urlPath);
+
+                        Log.i("TAG", "--->" + urlPath);
+                        Glide.with(MainActivity.this).load(urlPath).centerCrop().crossFade().into(ivShow);
                         tvYuan.setText("原图：图片大小" + file.length() / 1024 + "k" + "图片尺寸："
                                 + Luban.get(getApplicationContext()).getImageSize(file.getPath())[0]
                                 + " * " + Luban.get(getApplicationContext()).getImageSize(file.getPath())[1]);
 
                         compressWithLs(file);
-//                        startPhotoZoom(mContext, uri, PHOTO_RESULT);
-                    } else {
                     }
                     break;
             }
@@ -138,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     public void onSuccess(File file) {
                         Log.i("path", file.getAbsolutePath());
 
-                        Glide.with(MainActivity.this).load(file).into(ivShow);
+                        Glide.with(MainActivity.this).load(file).centerCrop().crossFade().into(ivShowCompress);
 
                         tvChange.setText("压缩后：图片大小" + file.length() / 1024 + "k" + "图片尺寸："
                                 + Luban.get(getApplicationContext()).getImageSize(file.getPath())[0]
@@ -152,7 +161,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 }).launch();
     }
 
-    private void compressWithRx(File file){
+    private void compressWithRx(File file) {
         Luban.get(this)
                 .load(file)
                 .putGear(Luban.THIRD_GEAR)
@@ -174,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 .subscribe(new Action1<File>() {
                     @Override
                     public void call(File file) {
-                        Glide.with(MainActivity.this).load(file).into(ivShow);
+                        Glide.with(MainActivity.this).load(file).centerCrop().crossFade().into(ivShowCompress);
 
                         Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
                         Uri uri = Uri.fromFile(file);

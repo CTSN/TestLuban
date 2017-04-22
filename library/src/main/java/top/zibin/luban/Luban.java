@@ -203,7 +203,6 @@ public class Luban {
 
         double size;
         String filePath = file.getAbsolutePath();
-
         int angle = getImageSpinAngle(filePath);
         int width = getImageSize(filePath)[0];
         int height = getImageSize(filePath)[1];
@@ -215,7 +214,7 @@ public class Luban {
 
         double scale = ((double) width / height);
 
-        if (scale <= 1 && scale > 0.5625) {
+        if (scale <= 1 && scale > 0.5625) { // 图片伸缩比（短边：长边）范围在 9:16到1:1
             if (height < 1664) {
                 if (file.length() / 1024 < 150) return file;
 
@@ -238,7 +237,7 @@ public class Luban {
                 size = (thumbW * thumbH) / Math.pow(2560, 2) * 300;
                 size = size < 100 ? 100 : size;
             }
-        } else if (scale <= 0.5625 && scale > 0.5) {
+        } else if (scale <= 0.5625 && scale > 0.5) {//400*800 ~ 1280*720
             if (height < 1280 && file.length() / 1024 < 200) return file;
 
             int multiple = height / 1280 == 0 ? 1 : height / 1280;
