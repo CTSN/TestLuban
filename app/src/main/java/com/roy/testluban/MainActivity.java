@@ -111,12 +111,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     if (data != null) {// 为了取消选取不报空指针用的
                         Uri uri = data.getData();
                         String urlPath = uri.getPath();
+
+                        //去除小米5图片返回路径携带/raw/
                         if (urlPath.contains("/raw/")) {
                             urlPath = urlPath.replace("/raw/", "");
                         }
                         File file = new File(urlPath);
 
-                        Log.i("TAG", "--->" + urlPath);
+//                        Log.i("TAG", "--->" + urlPath);
                         Glide.with(MainActivity.this).load(urlPath).centerCrop().crossFade().into(ivShow);
                         tvYuan.setText("原图：图片大小" + file.length() / 1024 + "k" + "图片尺寸："
                                 + Luban.get(getApplicationContext()).getImageSize(file.getPath())[0]
@@ -145,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
                     @Override
                     public void onSuccess(File file) {
-                        Log.i("path", file.getAbsolutePath());
+//                        Log.i("path", file.getAbsolutePath());
 
                         Glide.with(MainActivity.this).load(file).centerCrop().crossFade().into(ivShowCompress);
 

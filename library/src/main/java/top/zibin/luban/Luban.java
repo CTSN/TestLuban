@@ -5,6 +5,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
@@ -13,6 +17,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
@@ -23,6 +30,9 @@ import rx.schedulers.Schedulers;
 import static top.zibin.luban.Preconditions.checkNotNull;
 
 public class Luban {
+
+    private static Handler handler;
+//    private ExecutorService threadPool = Executors.newFixedThreadPool(5);
 
     private static final int FIRST_GEAR = 1;
     public static final int THIRD_GEAR = 3;
@@ -40,6 +50,7 @@ public class Luban {
     private String filename;
 
     private Luban(File cacheDir) {
+
         mCacheDir = cacheDir;
     }
 
@@ -85,6 +96,7 @@ public class Luban {
     }
 
     public static Luban get(Context context) {
+        handler = new Handler(Looper.getMainLooper());
         if (INSTANCE == null) INSTANCE = new Luban(Luban.getPhotoCacheDir(context));
         return INSTANCE;
     }
@@ -92,67 +104,104 @@ public class Luban {
     public Luban launch() {
         checkNotNull(mFile, "the image file cannot be null, please call .load() before this method!");
 
+        Log.i("TAG","begin--->" + System.currentTimeMillis());
         if (compressListener != null) compressListener.onStart();
 
-        if (gear == Luban.FIRST_GEAR)
-            Observable.just(mFile)
-                    .map(new Func1<File, File>() {
-                        @Override
-                        public File call(File file) {
-                            return firstCompress(file);
-                        }
-                    })
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnError(new Action1<Throwable>() {
-                        @Override
-                        public void call(Throwable throwable) {
-                            if (compressListener != null) compressListener.onError(throwable);
-                        }
-                    })
-                    .onErrorResumeNext(Observable.<File>empty())
-                    .filter(new Func1<File, Boolean>() {
-                        @Override
-                        public Boolean call(File file) {
-                            return file != null;
-                        }
-                    })
-                    .subscribe(new Action1<File>() {
-                        @Override
-                        public void call(File file) {
-                            if (compressListener != null) compressListener.onSuccess(file);
-                        }
-                    });
-        else if (gear == Luban.THIRD_GEAR)
-            Observable.just(mFile)
-                    .map(new Func1<File, File>() {
-                        @Override
-                        public File call(File file) {
-                            return thirdCompress(file);
-                        }
-                    })
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnError(new Action1<Throwable>() {
-                        @Override
-                        public void call(Throwable throwable) {
-                            if (compressListener != null) compressListener.onError(throwable);
-                        }
-                    })
-                    .onErrorResumeNext(Observable.<File>empty())
-                    .filter(new Func1<File, Boolean>() {
-                        @Override
-                        public Boolean call(File file) {
-                            return file != null;
-                        }
-                    })
-                    .subscribe(new Action1<File>() {
-                        @Override
-                        public void call(File file) {
-                            if (compressListener != null) compressListener.onSuccess(file);
-                        }
-                    });
+        if (gear == Luban.FIRST_GEAR) {
+            ThreadPoolFactory.getNormalPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    final File file = firstCompress(mFile);
+                    if (file!=null){
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (compressListener != null) compressListener.onSuccess(file);
+                            }
+                        });
 
+                    }//else
+//                            if (compressListener != null) compressListener.onSuccess(file);
+                }
+            });
+//            Observable.just(mFile)
+//                    .map(new Func1<File, File>() {
+//                        @Override
+//                        public File call(File file) {
+//                            return firstCompress(file);
+//                        }
+//                    })
+//                    .subscribeOn(Schedulers.io())
+//                    .observeOn(AndroidSchedulers.mainThread())
+//                    .doOnError(new Action1<Throwable>() {
+//                        @Override
+//                        public void call(Throwable throwable) {
+//                            if (compressListener != null) compressListener.onError(throwable);
+//                        }
+//                    })
+//                    .onErrorResumeNext(Observable.<File>empty())
+//                    .filter(new Func1<File, Boolean>() {
+//                        @Override
+//                        public Boolean call(File file) {
+//                            return file != null;
+//                        }
+//                    })
+//                    .subscribe(new Action1<File>() {
+//                        @Override
+//                        public void call(File file) {
+//                            if (compressListener != null) compressListener.onSuccess(file);
+//                        }
+//                    });
+        }
+        else if (gear == Luban.THIRD_GEAR) {
+            ThreadPoolFactory.getNormalPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    final File file = firstCompress(mFile);
+                    if (file!=null){
+                        Log.i("TAG","end--->" + System.currentTimeMillis());
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (compressListener != null) compressListener.onSuccess(file);
+
+                            }
+                        });
+
+                    }//else
+//                      if (compressListener != null) compressListener.onSuccess(file);
+                }
+            });
+//            Observable.just(mFile)
+//                    .map(new Func1<File, File>() {
+//                        @Override
+//                        public File call(File file) {
+//                            return thirdCompress(file);
+//                        }
+//                    })
+//                    .subscribeOn(Schedulers.io())
+//                    .observeOn(AndroidSchedulers.mainThread())
+//                    .doOnError(new Action1<Throwable>() {
+//                        @Override
+//                        public void call(Throwable throwable) {
+//                            if (compressListener != null) compressListener.onError(throwable);
+//                        }
+//                    })
+//                    .onErrorResumeNext(Observable.<File>empty())
+//                    .filter(new Func1<File, Boolean>() {
+//                        @Override
+//                        public Boolean call(File file) {
+//                            return file != null;
+//                        }
+//                    })
+//                    .subscribe(new Action1<File>() {
+//                        @Override
+//                        public void call(File file) {
+//                            Log.i("TAG","end--->" + System.currentTimeMillis());
+//                            if (compressListener != null) compressListener.onSuccess(file);
+//                        }
+//                    });
+        }
         return this;
     }
 
@@ -206,38 +255,52 @@ public class Luban {
         int angle = getImageSpinAngle(filePath);
         int width = getImageSize(filePath)[0];
         int height = getImageSize(filePath)[1];
+        Log.i("TAG","realWidth == >" + width);
+        Log.i("TAG","realHeight == >" + height);
+
         int thumbW = width % 2 == 1 ? width + 1 : width;
         int thumbH = height % 2 == 1 ? height + 1 : height;
+        Log.i("TAG","thumbW == >" + thumbW);
+        Log.i("TAG","thumbH == >" + thumbH);
 
         width = thumbW > thumbH ? thumbH : thumbW;
         height = thumbW > thumbH ? thumbW : thumbH;
+        Log.i("TAG","width == >" + width);
+        Log.i("TAG","height == >" + height);
 
         double scale = ((double) width / height);
 
         if (scale <= 1 && scale > 0.5625) { // 图片伸缩比（短边：长边）范围在 9:16到1:1
+            Log.i("TAG","scale <= 1 && scale > 0.5625 ---->" + scale);
             if (height < 1664) {
                 if (file.length() / 1024 < 150) return file;
 
                 size = (width * height) / Math.pow(1664, 2) * 150;
                 size = size < 60 ? 60 : size;
+                Log.i("TAG","height < 1664 ---->" + size);
             } else if (height >= 1664 && height < 4990) {
                 thumbW = width / 2;
                 thumbH = height / 2;
                 size = (thumbW * thumbH) / Math.pow(2495, 2) * 300;
                 size = size < 60 ? 60 : size;
+                Log.i("TAG","height >= 1664 && height < 4990 ---->" + size);
             } else if (height >= 4990 && height < 10240) {
                 thumbW = width / 4;
                 thumbH = height / 4;
                 size = (thumbW * thumbH) / Math.pow(2560, 2) * 300;
                 size = size < 100 ? 100 : size;
+                Log.i("TAG","height >= 4990 && height < 10240 ---->" + size);
             } else {
                 int multiple = height / 1280 == 0 ? 1 : height / 1280;
                 thumbW = width / multiple;
                 thumbH = height / multiple;
                 size = (thumbW * thumbH) / Math.pow(2560, 2) * 300;
                 size = size < 100 ? 100 : size;
+                Log.i("TAG","else ---->" + size);
             }
         } else if (scale <= 0.5625 && scale > 0.5) {//400*800 ~ 1280*720
+            Log.i("TAG","scale <= 0.5625 && scale > 0.5 scale---->" + scale);
+
             if (height < 1280 && file.length() / 1024 < 200) return file;
 
             int multiple = height / 1280 == 0 ? 1 : height / 1280;
@@ -245,12 +308,15 @@ public class Luban {
             thumbH = height / multiple;
             size = (thumbW * thumbH) / (1440.0 * 2560.0) * 400;
             size = size < 100 ? 100 : size;
+            Log.i("TAG","scale <= 0.5625 && scale > 0.5 size---->" + size);
         } else {
+            Log.i("TAG","else scale---->" + scale);
             int multiple = (int) Math.ceil(height / (1280.0 / scale));
             thumbW = width / multiple;
             thumbH = height / multiple;
             size = ((thumbW * thumbH) / (1280.0 * (1280 / scale))) * 500;
             size = size < 100 ? 100 : size;
+            Log.i("TAG","else scale   size---->" + size);
         }
 
         return compress(filePath, thumb, thumbW, thumbH, angle, (long) size);
@@ -318,6 +384,7 @@ public class Luban {
     }
 
     /**
+     * 压缩原图尺寸
      * obtain the thumbnail that specify the size
      *
      * @param imagePath the target image path
@@ -326,14 +393,18 @@ public class Luban {
      * @return {@link Bitmap}
      */
     private Bitmap compress(String imagePath, int width, int height) {
+
+        Log.i("TAG","compress_width---"+width+"compress_height---" + height);
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(imagePath, options);
 
-        int outH = options.outHeight;
-        int outW = options.outWidth;
+        int outH = options.outHeight; //获取实际宽
+        int outW = options.outWidth;  //获取实际宽
         int inSampleSize = 1;
 
+
+        //当满足width 跟 height 结束递归 得到压缩比值
         if (outH > height || outW > width) {
             int halfH = outH / 2;
             int halfW = outW / 2;
@@ -347,7 +418,11 @@ public class Luban {
 
         options.inJustDecodeBounds = false;
 
-        int heightRatio = (int) Math.ceil(options.outHeight / (float) height);
+        Log.i("TAG","options.outHeight--->" + options.outHeight);
+        Log.i("TAG","options.outWidth--->" + options.outWidth);
+        Log.i("TAG","options.inSampleSize--->" + options.inSampleSize);
+
+        int heightRatio = (int) Math.ceil(options.outHeight / (float) height);  //向上取整 获取原图比压缩图比值
         int widthRatio = (int) Math.ceil(options.outWidth / (float) width);
 
         if (heightRatio > 1 || widthRatio > 1) {
@@ -358,6 +433,9 @@ public class Luban {
             }
         }
         options.inJustDecodeBounds = false;
+        Log.i("TAG","1options.outHeight--->" + options.outHeight);
+        Log.i("TAG","1options.outWidth--->" + options.outWidth);
+        Log.i("TAG","1options.inSampleSize--->" + options.inSampleSize);
 
         return BitmapFactory.decodeFile(imagePath, options);
     }
