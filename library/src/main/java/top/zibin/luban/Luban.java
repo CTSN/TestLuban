@@ -124,6 +124,7 @@ public class Luban {
 //                            if (compressListener != null) compressListener.onSuccess(file);
                 }
             });
+            //TODO:delete rxjava
 //            Observable.just(mFile)
 //                    .map(new Func1<File, File>() {
 //                        @Override
@@ -172,6 +173,7 @@ public class Luban {
 //                      if (compressListener != null) compressListener.onSuccess(file);
                 }
             });
+            //TODO:delete rxjava
 //            Observable.just(mFile)
 //                    .map(new Func1<File, File>() {
 //                        @Override
