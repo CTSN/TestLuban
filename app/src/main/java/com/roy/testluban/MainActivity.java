@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
 
     /**
-     * 压缩单张图片 Listener 方式
+     * 压缩图片
      */
     private void compressWithLs(File file) {
         Luban.get(this)
@@ -142,13 +142,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 .setCompressListener(new OnCompressListener() {
                     @Override
                     public void onStart() {
-                        Toast.makeText(MainActivity.this, "I'm start", Toast.LENGTH_SHORT).show();
                     }
 
                     @Override
                     public void onSuccess(File file) {
-//                        Log.i("path", file.getAbsolutePath());
-
                         Glide.with(MainActivity.this).load(file).centerCrop().crossFade().into(ivShowCompress);
 
                         tvChange.setText("压缩后：图片大小" + file.length() / 1024 + "k" + "图片尺寸："
@@ -163,22 +160,23 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 }).launch();
     }
 
+
     private void compressWithRx(File file) {
         Luban.get(this)
-                .load(file)
-                .putGear(Luban.THIRD_GEAR)
-                .asObservable()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+                .load(file) //加载图片
+                .putGear(Luban.THIRD_GEAR)  //设置压缩等级
+                .asObservable()     //返回一个Obsetvable观察者对象
+                .subscribeOn(Schedulers.io())   //压缩指定IO线程
+                .observeOn(AndroidSchedulers.mainThread())  //回调返回主线程
                 .doOnError(new Action1<Throwable>() {
                     @Override
-                    public void call(Throwable throwable) {
+                    public void call(Throwable throwable) {     //运行异常回调
                         throwable.printStackTrace();
                     }
                 })
                 .onErrorResumeNext(new Func1<Throwable, Observable<? extends File>>() {
                     @Override
-                    public Observable<? extends File> call(Throwable throwable) {
+                    public Observable<? extends File> call(Throwable throwable) {   //异常处理
                         return Observable.empty();
                     }
                 })
@@ -214,6 +212,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         if (EasyPermissions.hasPermissions(this, Manifest.permission.RECORD_AUDIO)) {
 //            canGO();
         }
+
     }
 
     //失败

@@ -74,9 +74,9 @@ public class Luban {
      * @see #getPhotoCacheDir(android.content.Context)
      */
     private static File getPhotoCacheDir(Context context, String cacheName) {
-        File cacheDir = context.getCacheDir();
+        File cacheDir = context.getCacheDir();  //获取应用缓存目录
         if (cacheDir != null) {
-            File result = new File(cacheDir, cacheName);
+            File result = new File(cacheDir, cacheName);    //创建缓存文件夹
             if (!result.mkdirs() && (!result.exists() || !result.isDirectory())) {
                 // File wasn't able to create a directory, or the result exists but not a directory
                 return null;
